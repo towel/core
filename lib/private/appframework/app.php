@@ -27,7 +27,7 @@ namespace OC\AppFramework;
 use OC_App;
 use OC\AppFramework\DependencyInjection\DIContainer;
 use OCP\AppFramework\QueryException;
-use OCP\AppFramework\Http\Stream;
+use OCP\AppFramework\Http\ICallbackResponse;
 
 /**
  * Entry point for every request in your app. You can consider this as your
@@ -113,8 +113,8 @@ class App {
 			setcookie($name, $value['value'], $expireDate, $container->getServer()->getWebRoot(), null, $container->getServer()->getConfig()->getSystemValue('forcessl', false), true);
 		}
 
-		if ($response instanceof Stream) {
-			$response->stream();
+		if ($response instanceof ICallbackResponse) {
+			$response->callback();
 		} else if(!is_null($output)) {
 			header('Content-Length: ' . strlen($output));
 			print($output);
