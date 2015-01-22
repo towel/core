@@ -86,7 +86,7 @@ class AppTest extends \Test\TestCase {
 
 
 	public function testControllerNameAndMethodAreBeingPassed(){
-		$return = array(null, array(), array(), null);
+		$return = array(null, array(), array(), null, null);
 		$this->dispatcher->expects($this->once())
 			->method('dispatch')
 			->with($this->equalTo($this->controller),

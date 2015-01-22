@@ -24,9 +24,10 @@
 
 namespace OC\AppFramework;
 
-use \OC_App;
-use \OC\AppFramework\DependencyInjection\DIContainer;
-use \OCP\AppFramework\QueryException;
+use OC_App;
+use OC\AppFramework\DependencyInjection\DIContainer;
+use OCP\AppFramework\QueryException;
+use OCP\AppFramework\Http\Stream;
 
 /**
  * Entry point for every request in your app. You can consider this as your
@@ -93,7 +94,7 @@ class App {
 		// initialize the dispatcher and run all the middleware before the controller
 		$dispatcher = $container['Dispatcher'];
 
-		list($httpHeaders, $responseHeaders, $responseCookies, $output) =
+		list($httpHeaders, $responseHeaders, $responseCookies, $output, $response) =
 			$dispatcher->dispatch($controller, $methodName);
 
 		if(!is_null($httpHeaders)) {
@@ -112,7 +113,9 @@ class App {
 			setcookie($name, $value['value'], $expireDate, $container->getServer()->getWebRoot(), null, $container->getServer()->getConfig()->getSystemValue('forcessl', false), true);
 		}
 
-		if(!is_null($output)) {
+		if ($response instanceof Stream) {
+			$response->stream();
+		} else if(!is_null($output)) {
 			header('Content-Length: ' . strlen($output));
 			print($output);
 		}
