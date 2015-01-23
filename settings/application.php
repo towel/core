@@ -20,6 +20,7 @@ use OC\Settings\Middleware\SubadminMiddleware;
 use \OCP\AppFramework\App;
 use OCP\IContainer;
 use \OCP\Util;
+use \OC\Settings\Lib\EncryptionStatus;
 
 /**
  * @package OC\Settings
@@ -90,7 +91,8 @@ class Application extends App {
 				$c->query('Defaults'),
 				$c->query('Mail'),
 				$c->query('DefaultMailAddress'),
-				$c->query('URLGenerator')
+				$c->query('URLGenerator'),
+				$c->query('EncryptionStatus')
 			);
 		});
 		$container->registerService('LogSettingsController', function(IContainer $c) {
@@ -158,6 +160,13 @@ class Application extends App {
 		});
 		$container->registerService('URLGenerator', function(IContainer $c) {
 			return $c->query('ServerContainer')->getURLGenerator();
+		});
+		/** FIXME: Remove once \OCP\App::isEnabled is non-static and mockable */
+		$container->registerService('EncryptionStatus', function(IContainer $c) {
+			return new EncryptionStatus(
+				$c->query('Config'),
+				new \OCP\App()
+			);
 		});
 	}
 }
