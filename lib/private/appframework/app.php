@@ -94,15 +94,22 @@ class App {
 		// initialize the dispatcher and run all the middleware before the controller
 		$dispatcher = $container['Dispatcher'];
 
-		list($httpHeaders, $responseHeaders, $responseCookies, $output, $response) =
-			$dispatcher->dispatch($controller, $methodName);
+		list(
+			$httpHeaders,
+			$responseHeaders,
+			$responseCookies,
+			$output,
+			$response
+		) = $dispatcher->dispatch($controller, $methodName);
+
+		$io = $container['IO'];
 
 		if(!is_null($httpHeaders)) {
-			header($httpHeaders);
+			$io->setHeader($httpHeaders);
 		}
 
 		foreach($responseHeaders as $name => $value) {
-			header($name . ': ' . $value);
+			$io->setHeader($name . ': ' . $value);
 		}
 
 		foreach($responseCookies as $name => $value) {
@@ -110,14 +117,22 @@ class App {
 			if($value['expireDate'] instanceof \DateTime) {
 				$expireDate = $value['expireDate']->getTimestamp();
 			}
-			setcookie($name, $value['value'], $expireDate, $container->getServer()->getWebRoot(), null, $container->getServer()->getConfig()->getSystemValue('forcessl', false), true);
+			$io->setCookie(
+				$name,
+				$value['value'],
+				$expireDate,
+				$container->getServer()->getWebRoot(),
+				null,
+				$container->getServer()->getConfig()->getSystemValue('forcessl', false),
+				true
+			);
 		}
 
 		if ($response instanceof ICallbackResponse) {
 			$response->callback();
 		} else if(!is_null($output)) {
-			header('Content-Length: ' . strlen($output));
-			print($output);
+			$io->setHeader('Content-Length: ' . strlen($output));
+			$io->setOutput($output);
 		}
 
 	}
