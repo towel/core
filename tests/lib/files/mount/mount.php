@@ -13,10 +13,14 @@ use OC\Files\Storage\StorageFactory;
 use OC\Files\Storage\Wrapper\Wrapper;
 
 class Mount extends \Test\TestCase {
-	public function testFromStorageObject() {
-		$storage = $this->getMockBuilder('\OC\Files\Storage\Temporary')
+	private function getMockStorage() {
+		return $this->getMockBuilder('\OC\Files\Storage\Temporary')
 			->disableOriginalConstructor()
 			->getMock();
+	}
+
+	public function testFromStorageObject() {
+		$storage = $this->getMockStorage();
 		$mount = new \OC\Files\Mount\MountPoint($storage, '/foo');
 		$this->assertInstanceOf('\OC\Files\Storage\Temporary', $mount->getStorage());
 	}
@@ -37,10 +41,57 @@ class Mount extends \Test\TestCase {
 		$loader = new StorageFactory();
 		$loader->addStorageWrapper('test_wrapper', $wrapper);
 
-		$storage = $this->getMockBuilder('\OC\Files\Storage\Temporary')
-			->disableOriginalConstructor()
-			->getMock();
+		$storage = $this->getMockStorage();
 		$mount = new \OC\Files\Mount\MountPoint($storage, '/foo', array(), $loader);
 		$this->assertInstanceOf('\OC\Files\Storage\Wrapper\Wrapper', $mount->getStorage());
+	}
+
+	/**
+	 * storage available
+	 */
+	public function testAvailabilityTrue() {
+		$storage = $this->getMockStorage();
+		$storage->method('getAvailability')
+			->will($this->returnValue([ 'available' => true, 'last_checked' => 0 ]));
+
+		$storage->expects($this->never())
+			->method('test');
+
+		$mount = new \OC\Files\Mount\MountPoint($storage, '/foo');
+		$this->assertTrue($mount->isAvailable());
+	}
+
+	/**
+	 * storage unavailable, no recheck
+	 */
+	public function testAvailabilityFalse() {
+		$storage = $this->getMockStorage();
+		$storage->method('getAvailability')
+			->will($this->returnValue([ 'available' => false, 'last_checked' => time() ]));
+
+		$storage->expects($this->never())
+			->method('test');
+
+		$mount = new \OC\Files\Mount\MountPoint($storage, '/foo');
+		$this->assertFalse($mount->isAvailable());
+	}
+
+	/**
+	 * storage unavailable, recheck
+	 */
+	public function testAvailabilityFalseRecheck() {
+		$storage = $this->getMockStorage();
+		$storage->method('getAvailability')
+			->will($this->returnValue([ 'available' => false, 'last_checked' => 0 ]));
+
+		$storage->expects($this->once())
+			->method('test')
+			->will($this->returnValue(false));
+		$storage->expects($this->once())
+			->method('setAvailability')
+			->with($this->equalTo(false));
+
+		$mount = new \OC\Files\Mount\MountPoint($storage, '/foo');
+		$this->assertFalse($mount->isAvailable());
 	}
 }
